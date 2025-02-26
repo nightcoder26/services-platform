@@ -10,9 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.6.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+<<<<<<< HEAD
     "service-platform": "file:"
+=======
+    "react-redux": "^9.2.0",
+    "react-router-dom": "^7.2.0",
+    "sass": "^1.85.1"
+>>>>>>> b7cdffba203b0e820c581327c06e605209d3d1fb
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
