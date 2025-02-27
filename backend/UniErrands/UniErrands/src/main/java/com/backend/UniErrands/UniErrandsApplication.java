@@ -8,6 +8,7 @@ public class UniErrandsApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(UniErrandsApplication.class, args);
+		
 	}
 
 }
