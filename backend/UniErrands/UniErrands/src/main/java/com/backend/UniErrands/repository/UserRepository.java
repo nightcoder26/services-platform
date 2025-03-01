@@ -12,11 +12,9 @@ import java.util.List;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.tags WHERE u.id = :id")
-    Optional<User> findUserWithTags(@Param("id") Long id);
-    
-    @Query("SELECT u FROM User u JOIN u.tags t WHERE t.tagName = :tag")
-List<User> findUsersByTag(@Param("tag") String tag);
+    @Query("SELECT u FROM User u WHERE :tag MEMBER OF u.tags")
+    List<User> findUsersByTag(@Param("tag") String tag);
 
-   
+    @Query("SELECT u.role FROM User u WHERE u.id = :id")
+    Optional<String> findUserRoleById(@Param("id") Long id);
 }
