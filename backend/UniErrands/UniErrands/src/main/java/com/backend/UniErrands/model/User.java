@@ -14,6 +14,13 @@ import java.util.Set;
 @Table(name = "users")
 public class User {
 
+    public User(Long id) {
+        this.id = id;
+    }
+    public User() {
+        // Initialize fields if necessary
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

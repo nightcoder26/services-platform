@@ -69,4 +69,36 @@ public class TaskController {
         taskService.deleteTask(taskId);
         return ResponseEntity.ok("Task deleted successfully");
     }
+
+    @GetMapping("/browse")
+    public ResponseEntity<List<Task>> browseTasks(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String urgency,
+            @RequestParam(required = false) Double priceRange,
+            @RequestParam(required = false) Long distance) {
+        List<Task> tasks = taskService.browseTasks(category, urgency, priceRange, distance);
+        return ResponseEntity.ok(tasks);
+    }
+
+    @PostMapping("/request/{taskId}")
+    public ResponseEntity<String> requestTask(@PathVariable Long taskId, @RequestParam Long helperId) {
+        taskService.requestTask(taskId, helperId);
+        return ResponseEntity.ok("Request sent to accept the task.");
+    }
+
+    @PostMapping("/approve/{taskId}/{helperId}")
+    public ResponseEntity<String> approveHelper(@PathVariable Long taskId, @PathVariable Long helperId) {
+        taskService.approveHelper(taskId, helperId);
+        return ResponseEntity.ok("Helper approved for the task.");
+    }
+
+    @GetMapping("/my-tasks")
+public ResponseEntity<List<Task>> getMyTasks(@RequestParam Long userId, @RequestParam String role) {
+    System.out.println("User  ID: " + userId + ", Role: " + role);
+    List<Task> tasks = taskService.getMyTasks(userId, role);
+    System.out.println("Returned Tasks: " + tasks);
+    return ResponseEntity.ok(tasks);
+}
+
+
 }

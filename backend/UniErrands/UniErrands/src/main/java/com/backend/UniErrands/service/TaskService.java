@@ -3,6 +3,7 @@ package com.backend.UniErrands.service;
 import com.backend.UniErrands.model.Task;
 import com.backend.UniErrands.repository.TaskRepository;
 import org.springframework.stereotype.Service;
+import com.backend.UniErrands.model.User;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,4 +53,35 @@ public class TaskService {
     public void deleteTask(Long taskId) {
         taskRepository.deleteById(taskId);
     }
+
+    public List<Task> browseTasks(String category, String urgency, Double priceRange, Long userId) {
+        return taskRepository.findFilteredTasks(category, urgency, priceRange, userId);
+    }
+
+    public void requestTask(Long taskId, Long helperId) {
+        // Logic to handle task request by a helper
+        Optional<Task> taskOptional = taskRepository.findById(taskId);
+        if (taskOptional.isPresent()) {
+            Task task = taskOptional.get();
+            task.setHelper(new User(helperId)); // Assuming User is already fetched
+            taskRepository.save(task);
+        }
+    }
+
+    public void approveHelper(Long taskId, Long helperId) {
+        // Logic to approve a helper for a task
+        Optional<Task> taskOptional = taskRepository.findById(taskId);
+        if (taskOptional.isPresent()) {
+            Task task = taskOptional.get();
+            task.setHelper(new User(helperId)); // Assuming User is already fetched
+            task.setStatus(Task.Status.ACCEPTED);
+            taskRepository.save(task);
+        }
+    }
+
+    public List<Task> getMyTasks(Long userId, String role) {
+        // Logic to fetch tasks based on user role
+        return taskRepository.findTasksByRole(userId, role);
+    }
 }
+
