@@ -1,65 +1,71 @@
-
 package com.backend.UniErrands.Controller;
 
+import com.backend.UniErrands.model.User;
+import com.backend.UniErrands.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import com.backend.UniErrands.service.UserService;
-import com.backend.UniErrands.model.User;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
-  
+
     @Autowired
     private UserService userService;
 
-    @PostMapping("/signup")
-    public ResponseEntity<User> signup(@RequestBody User user) {
-        User savedUser = userService.createUser(user);
-        return ResponseEntity.ok(savedUser);
-    }
-    
-    @GetMapping
-    public List<User> getUsers() {
-        return userService.getAllUsers();
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<User> getUser(@PathVariable Long id) {
-        User user = userService.getUserById(id);
-        return user != null ? ResponseEntity.ok(user) : ResponseEntity.notFound().build();
-    }
-
-    @PutMapping("/{userId}/tags")
-    public ResponseEntity<User> updateUserTags(@PathVariable Long userId, @RequestBody List<String> newTags) {
-        if (newTags == null || newTags.isEmpty()) {
-            return ResponseEntity.badRequest().body(null);
+    @PostMapping("/auth/register")
+    public ResponseEntity<User> register(@RequestBody User user) {
+        try {
+            User createdUser = userService.createUser(user); // Use createUser method
+            return ResponseEntity.ok(createdUser);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
         }
-        User updatedUser = userService.updateUserTagsById(userId, newTags);
-        return updatedUser != null ? ResponseEntity.ok(updatedUser) : ResponseEntity.notFound().build();
     }
 
-    @GetMapping("tag/{tag}")
-    public ResponseEntity<List<User>> getUsersByTag(@PathVariable String tag) {
-        List<User> users = userService.getUsersByTag(tag);
-        return users.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(users);
+    @GetMapping("/profile/{id}")
+    public ResponseEntity<User> getUserProfile(@PathVariable Long id) {
+        User user = userService.getUserById(id);
+        if (user != null) {
+            return ResponseEntity.ok(user);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    // Fetch user role
-    @GetMapping("/{userId}/role")
-    public ResponseEntity<String> getUserRole(@PathVariable Long userId) {
-        String role = userService.getUserRole(userId);
-        return role != null ? ResponseEntity.ok(role) : ResponseEntity.notFound().build();
+    @PutMapping("/profile/update")
+    public ResponseEntity<User> updateUserProfile(@RequestBody User updatedUser) {
+        User user = userService.updateUserProfile(updatedUser.getId(), updatedUser);
+        if (user != null) {
+            return ResponseEntity.ok(user);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    // Update user profile
-    @PutMapping("/{userId}/profile")
-    public ResponseEntity<User> updateUserProfile(@PathVariable Long userId, @RequestBody User updatedProfile) {
-        User updatedUser = userService.updateUserProfile(userId, updatedProfile);
-        return updatedUser != null ? ResponseEntity.ok(updatedUser) : ResponseEntity.notFound().build();
+    @GetMapping("/all")
+    public ResponseEntity<List<User>> getAllUsers() {
+        List<User> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        boolean isDeleted = userService.deleteUserById(id);
+        if (isDeleted) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/roles")
+
+
+    public ResponseEntity<List<String>> getUserRoles() {
+        List<String> roles = List.of("Requester", "Helper", "Both");
+        return ResponseEntity.ok(roles);
     }
 }

@@ -4,23 +4,29 @@ import com.backend.UniErrands.model.Task;
 import com.backend.UniErrands.repository.TaskRepository;
 import org.springframework.stereotype.Service;
 import com.backend.UniErrands.model.User;
+import com.backend.UniErrands.repository.UserRepository;
+
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class TaskService {
     private final TaskRepository taskRepository;
+    private final UserRepository userRepository;
 
-    public TaskService(TaskRepository taskRepository) {
+    public TaskService(TaskRepository taskRepository, UserRepository userRepository) {
         this.taskRepository = taskRepository;
+        this.userRepository = userRepository;
     }
 
     public Task createTask(Task task) {
         return taskRepository.save(task);
     }
+
     public Optional<Task> findById(Long taskId) {
         return taskRepository.findById(taskId);
     }
+
     public Task save(Task task) {
         return taskRepository.save(task);
     }
@@ -59,29 +65,27 @@ public class TaskService {
     }
 
     public void requestTask(Long taskId, Long helperId) {
-        // Logic to handle task request by a helper
         Optional<Task> taskOptional = taskRepository.findById(taskId);
         if (taskOptional.isPresent()) {
             Task task = taskOptional.get();
-            task.setHelper(new User(helperId)); // Assuming User is already fetched
+            User user = userRepository.findById(helperId).orElseThrow(() -> new RuntimeException("User not found")); // Fetch User
+            task.setHelper(user); // Set the fetched User as helper
             taskRepository.save(task);
         }
     }
 
     public void approveHelper(Long taskId, Long helperId) {
-        // Logic to approve a helper for a task
         Optional<Task> taskOptional = taskRepository.findById(taskId);
         if (taskOptional.isPresent()) {
             Task task = taskOptional.get();
-            task.setHelper(new User(helperId)); // Assuming User is already fetched
+            User user = userRepository.findById(helperId).orElseThrow(() -> new RuntimeException("User not found")); // Fetch User
+            task.setHelper(user); // Set the fetched User as helper
             task.setStatus(Task.Status.ACCEPTED);
             taskRepository.save(task);
         }
     }
 
     public List<Task> getMyTasks(Long userId, String role) {
-        // Logic to fetch tasks based on user role
         return taskRepository.findTasksByRole(userId, role);
     }
 }
-

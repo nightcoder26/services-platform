@@ -2,6 +2,11 @@ package com.backend.UniErrands.Controller;
 
 import com.backend.UniErrands.model.Task;
 import com.backend.UniErrands.service.TaskService;
+import org.springframework.beans.factory.annotation.Autowired; // Import for @Autowired
+import com.backend.UniErrands.service.UserService; // Import for UserService
+import org.springframework.http.HttpStatus; // Added import for HttpStatus
+
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -10,14 +15,25 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/tasks")
 public class TaskController {
+    @Autowired
+    private UserService userService;
+
     private final TaskService taskService;
+
 
     public TaskController(TaskService taskService) {
         this.taskService = taskService;
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Task> createTask(@RequestBody Task task) {
+    public ResponseEntity<Task> createTask(@RequestBody Task task, @RequestParam Long userId) {
+        String role = userService.getUserRole(userId);
+        if ("helper".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(null); // or return an appropriate error message
+        }
+
+
         return ResponseEntity.ok(taskService.createTask(task));
     }
 
