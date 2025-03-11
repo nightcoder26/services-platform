@@ -57,8 +57,14 @@ public class Task {
     }
 
     public enum Status {
-        PENDING, ACCEPTED, COMPLETED, CANCELLED
+        PENDING, ACCEPTED, COMPLETED, CANCELLED, REQUESTED, APPROVED
     }
+
+    public void setApprovedHelperId(User helper) {
+        this.helper = helper; // Set the helper directly
+    }
+
+
 
     public String getTaskDetails() {
         String requesterDetails = requester != null ? requester.getUserDetails() : "Requester not assigned";

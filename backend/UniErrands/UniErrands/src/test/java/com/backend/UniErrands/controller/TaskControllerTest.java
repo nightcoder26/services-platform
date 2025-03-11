@@ -1,7 +1,9 @@
-package com.backend.UniErrands.controller;
+package com.backend.UniErrands.controller; // Updated to match the new directory name
 
 import com.backend.UniErrands.model.Task;
 import com.backend.UniErrands.service.TaskService;
+import com.backend.UniErrands.model.User; // Import User class
+
 import com.backend.UniErrands.Controller.TaskController; // Added import for TaskController
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,8 +21,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
-
-
 class TaskControllerTest {
 
     @InjectMocks
@@ -29,8 +29,7 @@ class TaskControllerTest {
     @Mock
     private TaskService taskService;
 
-    @BeforeEach // No changes here
-
+    @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
     }
@@ -39,22 +38,27 @@ class TaskControllerTest {
     void testCreateTask() {
         Task task = new Task();
         task.setTitle("Test Task");
+        User requester = new User(); // Create a new User object
+        requester.setId(1L); // Set an ID for the requester
+        task.setRequester(requester); // Set the requester in the Task
+
         when(taskService.createTask(any(Task.class))).thenReturn(task);
 
-        ResponseEntity<Task> response = taskController.createTask(task);
+        ResponseEntity<String> response = taskController.createTask(task);
         assertEquals(200, response.getStatusCodeValue());
-        assertEquals(task, response.getBody());
+        assertEquals("Task created successfully: " + task.getId(), response.getBody());
+
     }
 
     @Test
-    void testGetTaskById() {
+    void testGetTaskDetails() { // Updated method name
         Task task = new Task();
         task.setId(1L);
         when(taskService.getTaskById(anyLong())).thenReturn(Optional.of(task));
 
-        ResponseEntity<Task> response = taskController.getTaskById(1L);
+        ResponseEntity<String> response = taskController.getTaskDetails(1L); // Updated method call
         assertEquals(200, response.getStatusCodeValue());
-        assertEquals(task, response.getBody());
+        assertEquals(task.getTaskDetails(), response.getBody());
     }
 
     @Test
