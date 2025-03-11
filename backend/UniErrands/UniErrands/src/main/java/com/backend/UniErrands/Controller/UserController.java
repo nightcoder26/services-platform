@@ -9,16 +9,29 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 public class UserController {
+    private final UserService userService;
 
     @Autowired
-    private UserService userService;
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<String> getUserDetails(@PathVariable Long id) {
+        User user = userService.getUserById(id); // Updated method call
+        if (user != null) {
+            return ResponseEntity.ok(user.getUserDetails());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
     @PostMapping("/auth/register")
     public ResponseEntity<User> register(@RequestBody User user) {
         try {
-            User createdUser = userService.createUser(user); // Use createUser method
+            User createdUser = userService.createUser(user);
             return ResponseEntity.ok(createdUser);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -62,8 +75,6 @@ public class UserController {
     }
 
     @GetMapping("/roles")
-
-
     public ResponseEntity<List<String>> getUserRoles() {
         List<String> roles = List.of("Requester", "Helper", "Both");
         return ResponseEntity.ok(roles);

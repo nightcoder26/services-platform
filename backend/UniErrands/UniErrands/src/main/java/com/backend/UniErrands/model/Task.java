@@ -1,6 +1,14 @@
 package com.backend.UniErrands.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
 import lombok.*;
 
 @Entity
@@ -28,9 +36,9 @@ public class Task {
     private String location;
 
     @Enumerated(EnumType.STRING)
-    private Status status = Status.PENDING;
+    private Status status = Status.PENDING; // Default status is PENDING
 
-    private Boolean isPrivate = false;
+    private Boolean isPrivate = false; // Indicates if the task is private
 
     @ManyToOne
     @JoinColumn(name = "requester_id", nullable = false)
@@ -41,7 +49,7 @@ public class Task {
     private User helper;
 
     public enum Category {
-        FOOD_DELIVERY, ERRANDS, GROCERIES, MISCELLANEOUS,MEDICINES
+        FOOD_DELIVERY, ERRANDS, GROCERIES, MISCELLANEOUS, MEDICINES
     }
 
     public enum Urgency {
@@ -50,5 +58,21 @@ public class Task {
 
     public enum Status {
         PENDING, ACCEPTED, COMPLETED, CANCELLED
+    }
+
+    public String getTaskDetails() {
+        String requesterDetails = requester != null ? requester.getUserDetails() : "Requester not assigned";
+        String helperDetails = helper != null ? helper.getUserDetails() : "Helper not assigned";
+        
+        return "Title: " + title +
+               ", Description: " + description +
+               ", Category: " + category +
+               ", Reward: " + reward +
+               ", Urgency: " + urgency +
+               ", Location: " + location +
+               ", Status: " + status +
+               ", Is Private: " + isPrivate +
+               ", Requester: " + requesterDetails +
+               ", Helper: " + helperDetails;
     }
 }
