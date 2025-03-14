@@ -9,7 +9,11 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "tasks")
@@ -48,6 +52,9 @@ public class Task {
     @JoinColumn(name = "helper_id")
     private User helper;
 
+    @OneToMany
+    private List<User> requestedHelpers = new ArrayList<>(); // New field for requested helpers
+
     public enum Category {
         FOOD_DELIVERY, ERRANDS, GROCERIES, MISCELLANEOUS, MEDICINES
     }
@@ -63,8 +70,6 @@ public class Task {
     public void setApprovedHelperId(User helper) {
         this.helper = helper; // Set the helper directly
     }
-
-
 
     public String getTaskDetails() {
         String requesterDetails = requester != null ? requester.getUserDetails() : "Requester not assigned";

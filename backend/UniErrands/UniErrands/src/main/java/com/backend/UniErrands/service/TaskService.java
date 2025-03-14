@@ -28,9 +28,10 @@ public class TaskService {
         // Ensure the associated User is saved before creating the Task
         if (task.getRequester() != null) {
             User requester = task.getRequester(); // Use the requester field
-            if (!requester.getRole().equals("REQUESTER") && !requester.getRole().equals("BOTH")) {
-                throw new IllegalArgumentException("Requester must have the role 'REQUESTER' or 'BOTH'.");
+            if (!requester.getRole().equals("HELPER") && !requester.getRole().equals("BOTH")) {
+                throw new IllegalArgumentException("Requester must have the role 'HELPER' or 'BOTH' to request a task.");
             }
+
             if (userRepository.findById(requester.getId()).isEmpty()) { 
                 userService.createUser(requester); // Save the User if not already saved
             }
@@ -39,7 +40,7 @@ public class TaskService {
         if (task.getHelper() != null) {
             User helper = task.getHelper(); // Use the helper field
             if (!helper.getRole().equals("HELPER") && !helper.getRole().equals("BOTH")) {
-                throw new IllegalArgumentException("Helper must have the role 'HELPER'.");
+                throw new IllegalArgumentException("Helper must have the role 'HELPER' or 'BOTH'.");
             }
         } else {
             throw new IllegalArgumentException("Task must have a valid helper.");
@@ -101,27 +102,35 @@ public class TaskService {
         return taskRepository.findFilteredTasks(taskCategory, taskUrgency, min_price, max_price, distance);
     }
     
-    public void requestTask(Long taskId, User requester) {
+    public void requestTask(Long taskId, User helper) {
         Optional<Task> taskOptional = taskRepository.findById(taskId);
         if (taskOptional.isPresent()) {
             Task task = taskOptional.get();
-            if (!requester.getRole().equals("REQUESTER") && !requester.getRole().equals("BOTH")) {
-                throw new IllegalArgumentException("Requester must have the role 'REQUESTER' or 'BOTH' to request a task.");
+            
+            if (!helper.getRole().equals("HELPER") && !helper.getRole().equals("BOTH")) {
+                throw new IllegalArgumentException("Only HELPER or BOTH roles can request a task.");
             }
-            task.setStatus(Task.Status.REQUESTED); // Assuming there's a status field
-            taskRepository.save(task); // Save the updated task
+    
+            // Ensure helper is not already in the list of requested helpers
+            if (task.getRequestedHelpers().contains(helper)) {
+                throw new IllegalArgumentException("You have already requested this task.");
+            }
+    
+            task.getRequestedHelpers().add(helper); // Add helper to request list
+            taskRepository.save(task);
         } else {
-            // Handle the case where the task is not found
+            throw new IllegalArgumentException("Task not found.");
         }
     }
+    
 
     public void approveHelper(Long taskId, Long helperId) {
         Optional<Task> taskOptional = taskRepository.findById(taskId);
         if (taskOptional.isPresent()) {
             Task task = taskOptional.get();
             User helper = userRepository.findById(helperId).orElse(null); // Fetch the User object
-            if (helper == null || !helper.getRole().equals("HELPER")) {
-                throw new IllegalArgumentException("Helper must have the role 'HELPER' to be approved.");
+            if (helper == null || (!helper.getRole().equals("HELPER") && !helper.getRole().equals("BOTH"))) {
+                throw new IllegalArgumentException("Helper must have the role 'HELPER' or 'BOTH' to be approved.");
             }
             task.setApprovedHelperId(helper); // Set the helper directly
 

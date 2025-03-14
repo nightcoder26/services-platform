@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
@@ -21,46 +22,70 @@ public class TaskController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<String> getTaskDetails(@PathVariable Long id) {
+    public ResponseEntity<Task> getTaskDetails(@PathVariable Long id) {
         return taskService.getTaskById(id)
-                .map(task -> ResponseEntity.ok(task.getTaskDetails()))
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/requester")
+    public ResponseEntity<Long> getRequesterId(@PathVariable Long id) {
+        return taskService.getTaskById(id)
+                .map(task -> ResponseEntity.ok(task.getRequester().getId()))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/requester/{id}/{subId}")
+    public ResponseEntity<?> handleRequesterRequest(@PathVariable Long id, @PathVariable Long subId) {
+        // Implement logic to handle the request for the specific task and requester
+        // This is a placeholder for the actual implementation
+        return ResponseEntity.ok("Handled request for task ID: " + id + " and sub ID: " + subId);
     }
 
     @GetMapping("/browse")
     public ResponseEntity<List<Task>> browseTasks(
         @RequestParam(required = false) String category,
         @RequestParam(required = false) String urgency,
-        @RequestParam(required = false) Double min_price, // New min price
+        @RequestParam(required = false) Double min_price,
         @RequestParam(required = false) Double max_price,
         @RequestParam(required = false) Double distance) {
     
-        // Log the category parameter for debugging
-        System.out.println("Category parameter received: " + category);
-        
-        Task.Category taskCategory = null;
-        if (category != null) {
-            try {
-                taskCategory = Task.Category.valueOf(category.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest().body(null); // Handle invalid category
-            }
-        }
-
-        List<Task> tasks = taskService.browseTasks(category, urgency,  min_price, max_price, distance);
+        List<Task> tasks = taskService.browseTasks(category, urgency, min_price, max_price, distance);
         return ResponseEntity.ok(tasks);
     }
 
     @PostMapping("/request/{taskId}")
-    public ResponseEntity<Void> requestTask(@PathVariable Long taskId, @RequestBody User user) {
+    public ResponseEntity<String> requestTask(@PathVariable Long taskId, @RequestBody User user) {
+        if (!user.getRole().equals("HELPER") && !user.getRole().equals("BOTH")) {
+            return ResponseEntity.status(403).body("Only helpers or users with BOTH role can request tasks.");
+        }
+
         taskService.requestTask(taskId, user);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok("Task requested successfully.");
     }
 
     @PostMapping("/approve/{taskId}/{helperId}")
-    public ResponseEntity<Void> approveHelper(@PathVariable Long taskId, @PathVariable Long helperId) {
+    public ResponseEntity<String> approveHelper(
+            @PathVariable Long taskId,
+            @PathVariable Long helperId,
+            @RequestBody User user) {
+
+        // Ensure only 'REQUESTER' or 'BOTH' roles can approve
+        if (!user.getRole().equals("REQUESTER") && !user.getRole().equals("BOTH")) {
+            return ResponseEntity.status(403).body("Only users with REQUESTER or BOTH role can approve a helper.");
+        }
+
+        // Ensure only the task creator can approve
+        Task task = taskService.getTaskById(taskId).orElse(null);
+        if (task == null) {
+            return ResponseEntity.notFound().build();
+        }
+        if (!task.getRequester().getId().equals(user.getId())) {
+            return ResponseEntity.status(403).body("Only the task creator can approve a helper.");
+        }
+
         taskService.approveHelper(taskId, helperId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok("Task has been approved and is now in progress.");
     }
 
     @PostMapping("/create")
@@ -75,8 +100,6 @@ public class TaskController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage()); // Return error message if role check fails
         }
-
-
     }
 
     @GetMapping("/all")

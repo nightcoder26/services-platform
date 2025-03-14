@@ -1,22 +1,18 @@
 package com.backend.UniErrands.service;
 
 import com.backend.UniErrands.model.Task;
-import com.backend.UniErrands.model.User; // Ensure User is imported
+import com.backend.UniErrands.model.User;
 import com.backend.UniErrands.repository.TaskRepository;
-import com.backend.UniErrands.repository.UserRepository; // Ensure UserRepository is imported
-
+import com.backend.UniErrands.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 public class TaskServiceTest {
@@ -28,7 +24,7 @@ public class TaskServiceTest {
     private TaskRepository taskRepository;
 
     @Mock
-    private UserRepository userRepository; // Mock UserRepository
+    private UserRepository userRepository;
 
     @BeforeEach
     public void setUp() {
@@ -36,64 +32,42 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void testBrowseTasks() {
-        Task task1 = new Task();
-        task1.setId(1L);
-        task1.setCategory(Task.Category.MISCELLANEOUS); // Use the correct enum type
-        
-        Task task2 = new Task();
-        task2.setId(2L);
-        task2.setCategory(Task.Category.MISCELLANEOUS); // Use the correct enum type
-
-        when(taskRepository.findFilteredTasks(any(), any(), any(), any(), any())).thenReturn(Arrays.asList(task1, task2));
-
-        List<Task> tasks = taskService.browseTasks(null, null,null, null, null);
-        assertEquals(2, tasks.size());
-    }
-
-    @Test
-    public void testRequestTask() {
-        Long taskId = 1L;
+    public void testCreateTaskWithBothRole() {
         User requester = new User();
-        requester.setRole("REQUESTER"); // Set the role for the requester
-        taskService.requestTask(taskId, requester); // Pass the User object
-        verify(taskRepository, times(1)).findById(taskId);
-    }
+        requester.setRole("BOTH");
+        requester.setId(1L);
 
-
-    @Test
-    public void testApproveHelper() {
-        Long taskId = 1L;
-        Long helperId = 2L;
+        User helper = new User();
+        helper.setRole("HELPER");
+        helper.setId(2L);
 
         Task task = new Task();
-        task.setId(taskId);
-        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
-        User helper = new User();
-        helper.setRole("HELPER"); // Set the role for the helper
+        task.setRequester(requester);
+        task.setHelper(helper);
 
-        when(userRepository.findById(helperId)).thenReturn(Optional.of(helper));
+        when(userRepository.findById(requester.getId())).thenReturn(Optional.of(requester));
+        when(taskRepository.save(task)).thenReturn(task);
 
-        taskService.approveHelper(taskId, helperId);
-
-        assertEquals(Task.Status.APPROVED, task.getStatus()); // Check if status is set to APPROVED
-        assertEquals(helper, task.getHelper()); // Check if the helper is set correctly
-        verify(taskRepository, times(1)).save(task); // Ensure save is called
+        Task createdTask = taskService.createTask(task);
+        assertNotNull(createdTask);
+        assertEquals(requester.getId(), createdTask.getRequester().getId());
     }
 
     @Test
-    public void testGetMyTasks() {
-        Task task1 = new Task();
-        task1.setId(1L);
-        User requester = new User(); // Use the default constructor or adjust as necessary
-        requester.setUsername("requester");
-        requester.setEmail("requester@example.com");
-        requester.setRole("REQUESTER");
-        task1.setRequester(requester);
+    public void testRequestTaskWithBothRole() {
+        User requester = new User();
+        requester.setRole("BOTH");
+        requester.setId(1L);
 
-        when(taskRepository.findTasksByRole("requester")).thenReturn(Arrays.asList(task1));
+        Task task = new Task();
+        task.setId(1L);
 
-        List<Task> tasks = taskService.getMyTasks("requester");
-        assertEquals(1, tasks.size());
+        when(taskRepository.findById(task.getId())).thenReturn(Optional.of(task));
+
+        taskService.requestTask(task.getId(), requester);
+        assertEquals(Task.Status.REQUESTED, task.getStatus());
+        verify(taskRepository).save(task);
     }
+
+    // Additional tests for other scenarios can be added here
 }

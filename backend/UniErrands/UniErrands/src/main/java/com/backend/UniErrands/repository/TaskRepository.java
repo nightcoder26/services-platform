@@ -13,13 +13,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.requester.role = :role")
     List<Task> findTasksByRole(String role);
 
-
-    @Query("SELECT t FROM Task t WHERE " +
-       "(:category IS NULL OR t.category = :category) AND " + // Use Task.Category instead of String
+@Query("SELECT t FROM Task t WHERE " +
+       "(:category IS NULL OR t.category = :category) AND " + 
        "(:urgency IS NULL OR t.urgency = :urgency) AND " + 
-       "(:min_price IS NULL OR t.reward >= :min_price) AND " +  // Minimum price condition
-       "(:max_price IS NULL OR t.reward <= :max_price) AND " + 
-       "(:distance IS NULL OR t.location <= :distance)")
-List<Task> findFilteredTasks(Task.Category category, Task.Urgency urgency, Double min_price, Double max_price, Double distance);
+       "(:minPrice IS NULL OR t.reward >= :minPrice) AND " +  
+       "(:maxPrice IS NULL OR t.reward <= :maxPrice)")
+  List<Task> findFilteredTasks(Task.Category category, Task.Urgency urgency, Double minPrice, Double maxPrice, Double distance);
 
 }

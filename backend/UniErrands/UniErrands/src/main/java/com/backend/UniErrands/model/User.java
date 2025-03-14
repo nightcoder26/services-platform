@@ -35,7 +35,8 @@ public class User {
     private String email;
 
     @Column(nullable = false)
-    private String role;
+private String role; // Roles can be REQUESTER, HELPER, or BOTH
+
 
     private String profilePicture; // URL or path to the profile picture
     private double ratings; // User ratings
