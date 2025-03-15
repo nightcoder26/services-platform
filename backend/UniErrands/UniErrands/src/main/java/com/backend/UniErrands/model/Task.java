@@ -55,6 +55,24 @@ public class Task {
     @OneToMany
     private List<User> requestedHelpers = new ArrayList<>(); // New field for requested helpers
 
+    public Task(String title, String description, Category category, Double reward, Urgency urgency, String location, User requester) {
+        this.title = title;
+        this.description = description;
+        this.category = category;
+        this.reward = reward;
+        this.urgency = urgency;
+        this.location = location;
+        this.requester = requester;
+        this.requestedHelpers = new ArrayList<>();
+    }
+
+    public void updateStatus(Status newStatus) {
+        if (newStatus == null) {
+            throw new IllegalArgumentException("Invalid status provided");
+        }
+        this.status = newStatus;
+    }
+
     public enum Category {
         FOOD_DELIVERY, ERRANDS, GROCERIES, MISCELLANEOUS, MEDICINES
     }

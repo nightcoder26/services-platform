@@ -3,6 +3,8 @@ package com.backend.UniErrands.controller;
 import com.backend.UniErrands.model.Task;
 import com.backend.UniErrands.model.User;
 import com.backend.UniErrands.service.TaskService;
+import com.backend.UniErrands.Controller.TaskController;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -14,19 +16,24 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 public class TaskControllerTest {
 
     @InjectMocks
-    private com.backend.UniErrands.Controller.TaskController taskController;
+    private TaskController taskController;
 
     @Mock
     private TaskService taskService;
 
+    private Task task; // Define the task variable
+
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
+        task = new Task(); // Initialize the task variable
     }
 
     @Test
@@ -70,30 +77,30 @@ public class TaskControllerTest {
     }
 
     @Test
-    public void testRequestTaskAsBoth() {
-        User user = new User();
-        user.setRole("BOTH");
+    public void testUpdateTaskStatus() {
         Long taskId = 1L;
+        String newStatus = "COMPLETED";
+        task.setId(taskId);
+        task.setStatus(Task.Status.PENDING);
 
-        doNothing().when(taskService).requestTask(taskId, user);
+        when(taskService.getTaskById(taskId)).thenReturn(Optional.of(task));
+        when(taskService.updateTaskStatus(anyLong(), anyString())).thenAnswer(invocation -> {
+            task.setStatus(Task.Status.valueOf(invocation.getArgument(1)));
+            return task;
+        });
 
-        ResponseEntity<String> response = taskController.requestTask(taskId, user);
+        ResponseEntity<Task> response = taskController.updateTaskStatus(taskId, newStatus);
         assertEquals(200, response.getStatusCodeValue());
-        assertEquals("Task requested successfully.", response.getBody());
+        assertEquals(Task.Status.COMPLETED, response.getBody().getStatus());
     }
 
     @Test
-    public void testRequestTaskWithValidHelper() {
-        User user = new User();
-        user.setRole("HELPER");
-        Long taskId = 17L;
-
-        doNothing().when(taskService).requestTask(taskId, user);
-
-        ResponseEntity<String> response = taskController.requestTask(taskId, user);
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals("Task requested successfully.", response.getBody());
+    void testUpdateTaskStatusWithInvalidStatus() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            task.updateStatus(null); // Check what status is being passed
+        });
     }
+    
 
     @Test
     public void testApproveHelperAsRequester() {
@@ -102,9 +109,8 @@ public class TaskControllerTest {
         User user = new User();
         user.setRole("REQUESTER");
         user.setId(3L);
-        
-        Task task = new Task();
         task.setRequester(user);
+
         when(taskService.getTaskById(taskId)).thenReturn(Optional.of(task));
 
         ResponseEntity<String> response = taskController.approveHelper(taskId, helperId, user);
@@ -115,17 +121,14 @@ public class TaskControllerTest {
     @Test
     public void testApproveHelperAsNonRequester() {
         Long taskId = 1L;
-
         Long helperId = 2L;
         User user = new User();
         user.setRole("REQUESTER");
         user.setId(3L);
-        
         User taskCreator = new User();
         taskCreator.setId(4L);
-        
-        Task task = new Task();
         task.setRequester(taskCreator);
+
         when(taskService.getTaskById(taskId)).thenReturn(Optional.of(task));
 
         ResponseEntity<String> response = taskController.approveHelper(taskId, helperId, user);
@@ -140,7 +143,7 @@ public class TaskControllerTest {
         User user = new User();
         user.setRole("HELPER");
         user.setId(3L);
-        
+
         ResponseEntity<String> response = taskController.approveHelper(taskId, helperId, user);
         assertEquals(403, response.getStatusCodeValue());
         assertEquals("Only users with REQUESTER or BOTH role can approve a helper.", response.getBody());
@@ -150,6 +153,7 @@ public class TaskControllerTest {
     public void testGetMyTasks() {
         String role = "REQUESTER";
         List<Task> tasks = List.of(new Task());
+
         when(taskService.getMyTasks(role)).thenReturn(tasks);
 
         ResponseEntity<List<Task>> response = taskController.getMyTasks(role);

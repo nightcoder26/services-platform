@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.backend.UniErrands.repository.UserRepository;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
 import com.backend.UniErrands.model.User;
 
 @Service
@@ -53,7 +56,9 @@ public class UserService {
 
     @Transactional
     public List<User> getAllUsers() {
-        return userRepository.findAll();
+        return StreamSupport.stream(userRepository.findAll().spliterator(), false)
+                            .collect(Collectors.toList());
+
     }
 
     @Transactional

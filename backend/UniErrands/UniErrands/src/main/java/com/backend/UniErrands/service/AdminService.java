@@ -5,6 +5,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.backend.UniErrands.repository.AdminRepository;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
 import com.backend.UniErrands.model.Admin;
 import java.util.Optional;
 import java.util.List;
@@ -30,6 +33,8 @@ public class AdminService {
 
 
 public List<Admin> getAllAdmins() {
-    return adminRepository.findAll();
+    return StreamSupport.stream(adminRepository.findAll().spliterator(), false)
+                        .collect(Collectors.toList());
+
 }
 }

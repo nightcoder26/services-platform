@@ -35,18 +35,21 @@ public class User {
     private String email;
 
     @Column(nullable = false)
-private String role; // Roles can be REQUESTER, HELPER, or BOTH
-
+    private String role; // Roles can be REQUESTER, HELPER, or BOTH
 
     private String profilePicture; // URL or path to the profile picture
     private double ratings; // User ratings
 
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "helper_id")
+    private User helper; // New field for helper
+
+
     @CollectionTable(name = "user_tags", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "tag")
     private Set<String> tags = new HashSet<>();  // Directly store tags as strings
 
-    public User(String username, String password, String email, String role, String profilePicture, double ratings, Set<String> tags) {
+    public User(String username, String password, String email, String role, String profilePicture, double ratings, Set<String> tags, User helper) {
         this.username = username;
         this.password = password;
         this.email = email;
@@ -54,6 +57,40 @@ private String role; // Roles can be REQUESTER, HELPER, or BOTH
         this.profilePicture = profilePicture;
         this.ratings = ratings;
         this.tags = tags;
+        this.helper = helper;
+    }
+
+
+    public User getHelper() {
+        return helper;
+    }
+
+    public void setHelper(User helper) {
+        this.helper = helper;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public double getRatings() {
+        return ratings;
     }
 
     public String getUserDetails() {
