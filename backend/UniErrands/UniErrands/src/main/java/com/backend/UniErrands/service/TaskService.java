@@ -99,7 +99,8 @@ public class TaskService {
             return Collections.emptyList(); // Invalid price range (min > max) -> return empty list
         }
     
-        return taskRepository.findFilteredTasks(taskCategory, taskUrgency, min_price, max_price, distance);
+        return taskRepository.findFilteredTasks(taskCategory, taskUrgency, min_price, max_price);
+
     }
     
     public void requestTask(Long taskId, User helper) {
@@ -117,6 +118,8 @@ public class TaskService {
             }
     
             task.getRequestedHelpers().add(helper); // Add helper to request list
+            task.setStatus(Task.Status.REQUESTED); // Set the task status to REQUESTED
+
             taskRepository.save(task);
         } else {
             throw new IllegalArgumentException("Task not found.");
@@ -128,19 +131,25 @@ public class TaskService {
         Optional<Task> taskOptional = taskRepository.findById(taskId);
         if (taskOptional.isPresent()) {
             Task task = taskOptional.get();
-            User helper = userRepository.findById(helperId).orElse(null); // Fetch the User object
+            User helper = userRepository.findById(helperId).orElse(null);
+    
             if (helper == null || (!helper.getRole().equals("HELPER") && !helper.getRole().equals("BOTH"))) {
                 throw new IllegalArgumentException("Helper must have the role 'HELPER' or 'BOTH' to be approved.");
             }
-            task.setApprovedHelperId(helper); // Set the helper directly
-
-            task.setStatus(Task.Status.APPROVED); // Assuming there's a status field
-            taskRepository.save(task); // Save the updated task
+    
+            // Ensure helper actually requested the task
+            if (!task.getRequestedHelpers().contains(helper)) {
+                throw new IllegalArgumentException("Helper did not request this task.");
+            }
+    
+            task.setHelper(helper); // Assign the helper to the task
+            task.setStatus(Task.Status.APPROVED); // Update task status
+            taskRepository.save(task);
         } else {
-            // Handle the case where the task is not found
+            throw new IllegalArgumentException("Task not found.");
         }
     }
-
+    
     public List<Task> getMyTasks(String role) {
         return taskRepository.findTasksByRole(role); // Ensure this method is defined in TaskRepository
     }

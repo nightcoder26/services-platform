@@ -18,6 +18,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
        "(:urgency IS NULL OR t.urgency = :urgency) AND " + 
        "(:minPrice IS NULL OR t.reward >= :minPrice) AND " +  
        "(:maxPrice IS NULL OR t.reward <= :maxPrice)")
-  List<Task> findFilteredTasks(Task.Category category, Task.Urgency urgency, Double minPrice, Double maxPrice, Double distance);
+    List<Task> findFilteredTasks(Task.Category category, Task.Urgency urgency, Double minPrice, Double maxPrice);
+
 
 }
