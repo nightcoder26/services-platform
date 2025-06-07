@@ -1,21 +1,19 @@
 package com.backend.UniErrands.service;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.HashSet;
+import com.backend.UniErrands.model.User;
+import com.backend.UniErrands.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.backend.UniErrands.repository.UserRepository;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import com.backend.UniErrands.model.User;
-
 @Service
-public class UserService { 
+public class UserService {
 
     @Autowired
     private UserRepository userRepository;
@@ -23,42 +21,37 @@ public class UserService {
     @Transactional
     public User createUser(User user) {
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("User with the same email already exists.");
+            throw new IllegalArgumentException("User with this email already exists.");
         }
         return userRepository.save(user);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public User getUserById(Long userId) {
         return userRepository.findById(userId).orElse(null);
     }
 
     @Transactional
-    public User updateUserProfile(Long userId, User updatedProfile) {
+    public User updateUser(Long userId, User updatedUser) {
         Optional<User> optionalUser = userRepository.findById(userId);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-            if (updatedProfile.getUsername() != null) user.setUsername(updatedProfile.getUsername());
-            if (updatedProfile.getEmail() != null) user.setEmail(updatedProfile.getEmail());
-            if (updatedProfile.getPassword() != null) user.setPassword(updatedProfile.getPassword());
-            if (updatedProfile.getRole() != null) user.setRole(updatedProfile.getRole());
-            if (updatedProfile.getProfilePicture() != null) user.setProfilePicture(updatedProfile.getProfilePicture());
-            if (updatedProfile.getRatings() != 0) user.setRatings(updatedProfile.getRatings());
+
+            if (updatedUser.getUsername() != null) user.setUsername(updatedUser.getUsername());
+            if (updatedUser.getEmail() != null) user.setEmail(updatedUser.getEmail());
+            if (updatedUser.getPassword() != null) user.setPassword(updatedUser.getPassword());
+            if (updatedUser.getRole() != null) user.setRole(updatedUser.getRole());
+            if (updatedUser.getRatings() != 0) user.setRatings(updatedUser.getRatings());
+             if (updatedUser.getTags() != null && !updatedUser.getTags().isEmpty()) user.setTags(updatedUser.getTags());
             return userRepository.save(user);
         }
         return null;
     }
 
-    @Transactional
-    public String getUserRole(Long userId) {
-        return userRepository.findUserRoleById(userId).orElse(null);
-    }
-
-    @Transactional
+    @Transactional(readOnly = true)
     public List<User> getAllUsers() {
         return StreamSupport.stream(userRepository.findAll().spliterator(), false)
-                            .collect(Collectors.toList());
-
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -70,22 +63,8 @@ public class UserService {
         return false;
     }
 
-    public void addSampleUsers() {
-        User user1 = new User();
-        user1.setUsername("rohan_k");
-        user1.setPassword("pass123");
-        user1.setEmail("rohan.kumar@vitapstudent.ac.in");
-        user1.setRole("REQUESTER");
-        user1.setTags(new HashSet<>(List.of("java", "c++")));
-        
-        User user2 = new User();
-        user2.setUsername("alice_s");
-        user2.setPassword("pass456");
-        user2.setEmail("alice.smith@vitapstudent.ac.in");
-        user2.setRole("REQUESTER");
-        user2.setTags(new HashSet<>(List.of("python", "javascript")));
-        
-        userRepository.save(user1);
-        userRepository.save(user2);
-    }
+   public User getUserByEmail(String email) {
+    return userRepository.findByEmail(email).orElse(null);
+}
+
 }
