@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>UniErrands Task Chat</title>
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 40px;
+      background-color: #f0f2f5;
+    }
+
+    h2 {
+      color: #2c3e50;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      font-size: 14px;
+    }
+
+    #message {
+      width: 300px;
+    }
+
+    #messages {
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 350px;
+      width: 550px;
+      overflow-y: auto;
+      background-color: #ffffff;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message-bubble {
+      padding: 10px 14px;
+      margin: 6px 0;
+      border-radius: 12px;
+      max-width: 70%;
+      font-size: 14px;
+      box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.1);
+      word-wrap: break-word;
+    }
+
+    .my-message {
+      align-self: flex-end;
+      background-color: #d1e7dd;
+      color: #1e4620;
+      text-align: right;
+    }
+
+    .other-message {
+      align-self: flex-start;
+      background-color: #f0f0f0;
+      color: #333;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h2>🔁 UniErrands Task Chat</h2>
+
+  <input type="text" id="userId" placeholder="Your User ID" />
+  <input type="text" id="taskId" placeholder="Task ID" />
+  <br />
+  <input type="text" id="message" placeholder="Type your message..." />
+  <button onclick="sendMessage()">Send</button>
+
+  <div id="messages"></div>
+
+  <script>
+    let stompClient = null;
+    let currentTaskId = null;
+    let currentUserId = null;
+
+    function connect(taskId, userId) {
+      return new Promise((resolve) => {
+        const socket = new SockJS('/ws-chat');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+          console.log('Connected: ' + frame);
+          stompClient.subscribe('/topic/task/' + taskId, function (message) {
+            const msg = JSON.parse(message.body);
+            const isSelf = msg.sender === userId;
+            showMessage(msg.sender, msg.content, isSelf);
+          });
+          currentTaskId = taskId;
+          currentUserId = userId;
+          resolve();
+        });
+      });
+    }
+
+    async function sendMessage() {
+      const userId = document.getElementById('userId').value.trim();
+      const taskId = document.getElementById('taskId').value.trim();
+      const content = document.getElementById('message').value.trim();
+
+      if (!userId || !taskId || !content) {
+        alert('Please fill all fields');
+        return;
+      }
+
+      if (!stompClient || !stompClient.connected || currentTaskId !== taskId || currentUserId !== userId) {
+        await connect(taskId, userId);
+      }
+
+      stompClient.send('/app/sendMessage/' + taskId, {}, JSON.stringify({
+        sender: userId,
+        content: content
+      }));
+
+      document.getElementById('message').value = '';
+    }
+
+    function showMessage(sender, content, isSelf) {
+      const messagesDiv = document.getElementById('messages');
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble ' + (isSelf ? 'my-message' : 'other-message');
+      bubble.innerHTML = `<strong>${sender}</strong><br/>${content}`;
+      messagesDiv.appendChild(bubble);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+  </script>
+</body>
+</html>

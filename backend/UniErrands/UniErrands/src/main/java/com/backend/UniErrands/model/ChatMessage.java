@@ -1,54 +1,29 @@
 package com.backend.UniErrands.model;
 
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+import lombok.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+
+@Getter
+@Setter
+@Entity
+@Table(name = "chat_message")
 public class ChatMessage {
-    private String senderId;
-    private String receiverId;
-    private String message;
+      @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String sender;
+
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
     private LocalDateTime timestamp;
 
-    // Constructor
-    public ChatMessage(String senderId, String receiverId, String message, LocalDateTime timestamp) {
-        this.senderId = senderId;
-        this.receiverId = receiverId;
-        this.message = message;
-        this.timestamp = timestamp;
-    }
-
-    // No-argument constructor
-    public ChatMessage() {}
-
-    // Getters and Setters
-    public String getSenderId() {
-        return senderId;
-    }
-
-    public void setSenderId(String senderId) {
-        this.senderId = senderId;
-    }
-
-    public String getReceiverId() {
-        return receiverId;
-    }
-
-    public void setReceiverId(String receiverId) {
-        this.receiverId = receiverId;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public LocalDateTime getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "task_chat_id")
+    private TaskChat taskChat;
 }

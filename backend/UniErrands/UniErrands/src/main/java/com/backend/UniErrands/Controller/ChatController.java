@@ -1,38 +1,36 @@
 package com.backend.UniErrands.Controller;
 
 import com.backend.UniErrands.model.ChatMessage;
-import com.backend.UniErrands.service.ChatService;
+import com.backend.UniErrands.model.User;
+import com.backend.UniErrands.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.stereotype.Controller;
 
-import java.util.List;
-import java.time.LocalDateTime;
+import java.util.Optional;
 
-@RestController
-@RequestMapping("/chat")
+@Controller
 public class ChatController {
 
     @Autowired
-    private ChatService chatService;
+    private UserRepository userRepository;
 
-    // ✅ WebSocket Endpoint: Send message to chat room
-    @MessageMapping("/chat/{taskId}")  // Clients send messages here
-    @SendTo("/topic/messages/{taskId}")  // Messages are broadcasted here
-    public ChatMessage sendMessage(@PathVariable String taskId, ChatMessage message) {
-        // Set timestamp for message
-        message.setTimestamp(LocalDateTime.now());
-
-        // Save message in Redis
-        chatService.saveMessage(taskId, message);
-
-        return message; // Message is broadcasted to all subscribers
-    }
-
-    // ✅ REST API: Get chat history from Redis
-    @GetMapping("/history/{taskId}")
-    public List<ChatMessage> getChatHistory(@PathVariable String taskId) {
-        return chatService.getChatHistory(taskId);
+    @MessageMapping("/sendMessage/{taskId}") // changed to match client send destination
+    @SendTo("/topic/task/{taskId}")   // /topic/task/{taskId}
+    public ChatMessage sendMessage(@DestinationVariable String taskId, ChatMessage message) {
+        // Map sender ID to username
+        Optional<User> userOpt = Optional.empty();
+        try {
+            Long senderId = Long.parseLong(message.getSender());
+            userOpt = userRepository.findById(senderId);
+        } catch (NumberFormatException e) {
+            // sender is not a valid ID, keep as is
+        }
+        if (userOpt.isPresent()) {
+            message.setSender(userOpt.get().getUsername());
+        }
+        return message;
     }
 }
