@@ -1,8 +1,15 @@
 package com.backend.UniErrands.Controller;
 
+import com.backend.UniErrands.dto.TaskApproveHelperDTO;
+import com.backend.UniErrands.dto.TaskRequestByHelperDTO;
+import com.backend.UniErrands.dto.TaskRequestDTO;
+import com.backend.UniErrands.dto.TaskApproveHelperDTO;
 import com.backend.UniErrands.model.Task;
 import com.backend.UniErrands.model.User;
 import com.backend.UniErrands.service.TaskService;
+
+import jakarta.validation.Valid;
+
 import com.backend.UniErrands.repository.TaskRepository;
 import com.backend.UniErrands.repository.UserRepository;
 
@@ -70,57 +77,86 @@ public class TaskController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/request/{taskId}")
-    public ResponseEntity<String> requestTask(@PathVariable Long taskId, @RequestBody User userInput) {
-        Optional<User> optionalUser = userRepository.findById(userInput.getId());
-        if (optionalUser.isEmpty()) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
-
-        User user = optionalUser.get(); // use full user object with email
-        try {
-            taskService.requestTask(taskId, user);
-            return ResponseEntity.ok("Task request successful");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+   @PostMapping("/request/{taskId}")
+public ResponseEntity<String> requestTask(@PathVariable Long taskId, @RequestBody @Valid TaskRequestByHelperDTO dto) {
+    Optional<User> optionalUser = userRepository.findById(dto.getId());
+    if (optionalUser.isEmpty()) {
+        return ResponseEntity.badRequest().body("User not found");
     }
+
+    User user = optionalUser.get();
+    if (!user.getRole().equals("HELPER") && !user.getRole().equals("BOTH")) {
+        return ResponseEntity.status(403).body("Only helpers or users with BOTH role can request tasks.");
+    }
+
+    try {
+        taskService.requestTask(taskId, user);
+        return ResponseEntity.ok("Task request successful");
+    } catch (IllegalArgumentException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+}
+
 
     @PostMapping("/approve/{taskId}/{helperId}")
-    public ResponseEntity<String> approveHelper(
-            @PathVariable Long taskId,
-            @PathVariable Long helperId,
-            @RequestBody User user) {
-        if (user.getRole() == null || (!user.getRole().equals("REQUESTER") && !user.getRole().equals("BOTH"))) {
-            return ResponseEntity.status(403).body("Only users with REQUESTER or BOTH role can approve a helper.");
-        }
+public ResponseEntity<String> approveHelper(
+        @PathVariable Long taskId,
+        @PathVariable Long helperId,
+        @RequestBody @Valid TaskApproveHelperDTO dto) {
 
-        Optional<Task> optionalTask = taskService.getTaskById(taskId);
-        if (optionalTask.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        Task task = optionalTask.get();
-        if (!task.getRequester().getId().equals(user.getId())) {
-            return ResponseEntity.status(403).body("Only the task creator can approve a helper.");
-        }
-
-        taskService.approveHelper(taskId, helperId);
-        return ResponseEntity.ok("Task has been approved and is now in progress.");
+    if (!dto.getRole().equals("REQUESTER") && !dto.getRole().equals("BOTH")) {
+        return ResponseEntity.status(403).body("Only users with REQUESTER or BOTH role can approve a helper.");
     }
+
+    Optional<Task> optionalTask = taskService.getTaskById(taskId);
+    if (optionalTask.isEmpty()) {
+        return ResponseEntity.notFound().build();
+    }
+
+    Task task = optionalTask.get();
+    if (!task.getRequester().getId().equals(dto.getId())) {
+        return ResponseEntity.status(403).body("Only the task creator can approve a helper.");
+    }
+
+    taskService.approveHelper(taskId, helperId);
+    return ResponseEntity.ok("Task has been approved and is now in progress.");
+}
 
     @PostMapping("/create")
-    public ResponseEntity<String> createTask(@RequestBody Task task) {
-        if (task.getRequester() == null || task.getRequester().getId() == null) {
-            return ResponseEntity.badRequest().body("Requester must be set with a valid ID.");
-        }
-        try {
-            Task createdTask = taskService.createTask(task);
-            return ResponseEntity.ok("Task created successfully: " + createdTask.getId());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+public ResponseEntity<String> createTask(@RequestBody @Valid TaskRequestDTO dto) {
+    Optional<User> requester = userRepository.findById(dto.getRequesterId());
+    if (requester.isEmpty()) {
+        return ResponseEntity.badRequest().body("Requester not found.");
     }
+
+    Task task = new Task();
+    task.setTitle(dto.getTitle());
+    task.setDescription(dto.getDescription());
+    try {
+        task.setCategory(Task.Category.valueOf(dto.getCategory().toUpperCase()));
+    } catch (IllegalArgumentException e) {
+        return ResponseEntity.badRequest().body("Invalid category value.");
+    }
+    try {
+        task.setUrgency(Task.Urgency.valueOf(dto.getUrgency().toUpperCase()));
+    } catch (IllegalArgumentException e) {
+        return ResponseEntity.badRequest().body("Invalid urgency value.");
+    }
+    task.setReward(dto.getPrice());
+    task.setRequester(requester.get());
+    task.setStatus(Task.Status.PENDING);
+    System.out.println("DTO Title: " + dto.getTitle());
+System.out.println("Requester ID: " + dto.getRequesterId());
+
+
+    try {
+        Task createdTask = taskService.createTask(task);
+        return ResponseEntity.ok("Task created successfully: " + createdTask.getId());
+    } catch (IllegalArgumentException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+}
+
 
     @GetMapping("/all")
     public ResponseEntity<List<Task>> getAllTasks() {
