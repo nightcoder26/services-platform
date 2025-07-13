@@ -3,6 +3,8 @@ package com.backend.UniErrands.Controller;
 import com.backend.UniErrands.model.Task;
 import com.backend.UniErrands.model.User;
 import com.backend.UniErrands.service.TaskService;
+import com.backend.UniErrands.repository.TaskRepository;
+import com.backend.UniErrands.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,12 @@ import java.util.Optional;
 @RequestMapping("/tasks")
 public class TaskController {
     private final TaskService taskService;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private TaskRepository taskRepository;
 
     @Autowired
     public TaskController(TaskService taskService) {
@@ -63,12 +71,19 @@ public class TaskController {
     }
 
     @PostMapping("/request/{taskId}")
-    public ResponseEntity<String> requestTask(@PathVariable Long taskId, @RequestBody User user) {
-        if (user.getRole() == null || (!user.getRole().equals("HELPER") && !user.getRole().equals("BOTH"))) {
-            return ResponseEntity.status(403).body("Only helpers or users with BOTH role can request tasks.");
+    public ResponseEntity<String> requestTask(@PathVariable Long taskId, @RequestBody User userInput) {
+        Optional<User> optionalUser = userRepository.findById(userInput.getId());
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.badRequest().body("User not found");
         }
-        taskService.requestTask(taskId, user);
-        return ResponseEntity.ok("Task requested successfully.");
+
+        User user = optionalUser.get(); // use full user object with email
+        try {
+            taskService.requestTask(taskId, user);
+            return ResponseEntity.ok("Task request successful");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/approve/{taskId}/{helperId}")

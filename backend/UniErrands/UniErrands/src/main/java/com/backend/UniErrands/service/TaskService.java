@@ -25,24 +25,36 @@ public class TaskService {
     @Autowired
     private UserService userService;
 
-    public Task createTask(Task task) {
-        if (task.getRequester() != null) {
-            User requester = task.getRequester();
-            if (!requester.getRole().equals("HELPER") && !requester.getRole().equals("BOTH")) {
-                throw new IllegalArgumentException("Requester must have the role 'HELPER' or 'BOTH' to request a task.");
-            }
-            if (userRepository.findById(requester.getId()).isEmpty()) {
-                userService.createUser(requester);
-            }
+    
+  public Task createTask(Task task) {
+    if (task.getRequester() != null && task.getRequester().getId() != null) {
+        // Fetch full user from DB
+        User requester = userRepository.findById(task.getRequester().getId())
+            .orElseThrow(() -> new IllegalArgumentException("Requester not found"));
+
+        String requesterRole = requester.getRole();
+        if (requesterRole == null || (!requesterRole.equals("REQUESTER") && !requesterRole.equals("BOTH"))) {
+            throw new IllegalArgumentException("Requester must have the role 'REQUESTER' or 'BOTH' to request a task.");
         }
-        if (task.getHelper() != null) {
-            User helper = task.getHelper();
-            if (!helper.getRole().equals("HELPER") && !helper.getRole().equals("BOTH")) {
-                throw new IllegalArgumentException("Helper must have the role 'HELPER' or 'BOTH'.");
-            }
-        }
-        return taskRepository.save(task);
+
+        task.setRequester(requester); // attach fully loaded user to the task
     }
+
+    if (task.getHelper() != null && task.getHelper().getId() != null) {
+        User helper = userRepository.findById(task.getHelper().getId())
+            .orElseThrow(() -> new IllegalArgumentException("Helper not found"));
+
+        String helperRole = helper.getRole();
+        if (helperRole == null || (!helperRole.equals("HELPER") && !helperRole.equals("BOTH"))) {
+            throw new IllegalArgumentException("Helper must have the role 'HELPER' or 'BOTH'.");
+        }
+
+        task.setHelper(helper); // attach fully loaded user to the task
+    }
+
+    return taskRepository.save(task);
+}
+
 
     public Optional<Task> getTaskById(Long taskId) {
         return taskRepository.findById(taskId);
@@ -94,7 +106,7 @@ public class TaskService {
         Optional<Task> taskOptional = taskRepository.findById(taskId);
         if (taskOptional.isPresent()) {
             Task task = taskOptional.get();
-            if (!helper.getRole().equals("HELPER") && !helper.getRole().equals("BOTH")) {
+            if (helper.getRole() == null || (!helper.getRole().equals("HELPER") && !helper.getRole().equals("BOTH"))) {
                 throw new IllegalArgumentException("Only HELPER or BOTH roles can request a task.");
             }
             if (task.getRequestedHelpers().contains(helper)) {

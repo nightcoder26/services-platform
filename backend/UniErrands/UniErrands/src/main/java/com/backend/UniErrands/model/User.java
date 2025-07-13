@@ -123,4 +123,12 @@ public class User {
     @CollectionTable(name = "user_tags", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "tag")
     private Set<String> tags = new HashSet<>(); // Interests or skills
+
+    public String getUserDetails() {
+        return "Username: " + username +
+               (email != null ? ", Email: " + email : "") +
+               (role != null ? ", Role: " + role : "") +
+               (ratings > 0 ? ", Ratings: " + ratings : "") +
+               (tags != null && !tags.isEmpty() ? ", Tags: " + String.join(", ", tags) : "");
+    }
 }

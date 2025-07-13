@@ -10,6 +10,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
 import lombok.*;
 
 import java.util.ArrayList;
@@ -21,6 +22,8 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode
+@ToString
 public class Task {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,7 +55,7 @@ public class Task {
     @JoinColumn(name = "helper_id")
     private User helper;
 
-    @OneToMany
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<User> requestedHelpers = new ArrayList<>(); // New field for requested helpers
 
     public Task(String title, String description, Category category, Double reward, Urgency urgency, String location, User requester) {
@@ -85,7 +88,7 @@ public class Task {
         PENDING, ACCEPTED, COMPLETED, CANCELLED, REQUESTED, APPROVED
     }
 
-    public void setApprovedHelperId(User helper) {
+    public void setHelper(User helper) {
         this.helper = helper; // Set the helper directly
     }
 
