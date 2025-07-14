@@ -3,11 +3,10 @@ package com.backend.UniErrands.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.*;
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
 
 @Getter
 @Setter
@@ -24,6 +23,7 @@ public class TaskChat {
 
     private boolean active;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "taskChat", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChatMessage> messages = new ArrayList<>();
 }

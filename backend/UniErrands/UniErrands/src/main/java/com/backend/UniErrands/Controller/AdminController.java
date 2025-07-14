@@ -1,7 +1,6 @@
 package com.backend.UniErrands.Controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import com.backend.UniErrands.model.User; // Import User model
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;

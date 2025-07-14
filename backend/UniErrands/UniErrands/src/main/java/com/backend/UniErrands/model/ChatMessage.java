@@ -3,9 +3,9 @@ package com.backend.UniErrands.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.*;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
 
 @Getter
 @Setter
@@ -23,6 +23,7 @@ public class ChatMessage {
 
     private LocalDateTime timestamp;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_chat_id")
     private TaskChat taskChat;
