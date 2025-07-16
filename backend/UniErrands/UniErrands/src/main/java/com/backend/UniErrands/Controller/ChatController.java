@@ -21,6 +21,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import com.backend.UniErrands.exception.UserNotFoundException;
+
 @RestController
 @RequestMapping("/api/chat")
 public class ChatController {
@@ -49,7 +51,7 @@ public ChatMessage sendMessage(@DestinationVariable String taskId, ChatMessage m
         }
 
         User sender = userRepository.findById(senderId)
-                .orElseThrow(() -> new IllegalArgumentException("Sender not found"));
+                .orElseThrow(() -> new UserNotFoundException("Sender not found with ID: " + senderId));
 
         Task task = taskRepository.findById(Long.parseLong(taskId))
                 .orElseThrow(() -> new IllegalArgumentException("Task not found"));
@@ -65,10 +67,7 @@ public ChatMessage sendMessage(@DestinationVariable String taskId, ChatMessage m
 
         TaskChat taskChat = taskChatRepository.findByTaskId(taskId);
         if (taskChat == null) {
-            taskChat = new TaskChat();
-            taskChat.setTaskId(taskId);
-            taskChat.setActive(true);
-            taskChat = taskChatRepository.save(taskChat);
+            throw new com.backend.UniErrands.exception.ChatNotFoundException("Chat not found for taskId: " + taskId);
         }
 
         message.setTaskChat(taskChat);

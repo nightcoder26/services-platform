@@ -13,6 +13,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import com.backend.UniErrands.exception.UserNotFoundException;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
 @Service
 public class TaskService {
 
@@ -25,12 +29,16 @@ public class TaskService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private NotificationService notificationService;
+
     
   public Task createTask(Task task) {
     if (task.getRequester() != null && task.getRequester().getId() != null) {
+        Long requesterId = task.getRequester().getId();
         // Fetch full user from DB
-        User requester = userRepository.findById(task.getRequester().getId())
-            .orElseThrow(() -> new IllegalArgumentException("Requester not found"));
+        User requester = userRepository.findById(requesterId)
+            .orElseThrow(() -> new UserNotFoundException("Requester not found with ID: " + requesterId));
 
         String requesterRole = requester.getRole();
         if (requesterRole == null || (!requesterRole.equals("REQUESTER") && !requesterRole.equals("BOTH"))) {
@@ -41,8 +49,9 @@ public class TaskService {
     }
 
     if (task.getHelper() != null && task.getHelper().getId() != null) {
-        User helper = userRepository.findById(task.getHelper().getId())
-            .orElseThrow(() -> new IllegalArgumentException("Helper not found"));
+        Long helperId = task.getHelper().getId();
+        User helper = userRepository.findById(helperId)
+            .orElseThrow(() -> new UserNotFoundException("Helper not found with ID: " + helperId));
 
         String helperRole = helper.getRole();
         if (helperRole == null || (!helperRole.equals("HELPER") && !helperRole.equals("BOTH"))) {
@@ -128,12 +137,16 @@ public class TaskService {
             if (helper == null || (!helper.getRole().equals("HELPER") && !helper.getRole().equals("BOTH"))) {
                 throw new IllegalArgumentException("Helper must have the role 'HELPER' or 'BOTH' to be approved.");
             }
-            if (!task.getRequestedHelpers().contains(helper)) {
-                throw new IllegalArgumentException("Helper did not request this task.");
-            }
+           if (!task.getRequestedHelpers().contains(helper) &&
+    (task.getHelper() == null || !task.getHelper().getId().equals(helperId))) {
+    throw new IllegalArgumentException("Helper did not request this task.");
+}
+
             task.setHelper(helper);
             task.setStatus(Task.Status.APPROVED);
             taskRepository.save(task);
+
+            notificationService.sendHelperApprovedNotification(helper.getEmail(), task.getTitle());
         } else {
             throw new IllegalArgumentException("Task not found.");
         }

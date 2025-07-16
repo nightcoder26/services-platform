@@ -86,22 +86,20 @@
         stompClient.connect({}, function (frame) {
           console.log('Connected: ' + frame);
 
-          // Subscribe to task topic
          stompClient.subscribe('/topic/task/' + taskId, function (message) {
   const msg = JSON.parse(message.body);
   const isSelf = msg.sender === userId;
   showMessage(msg.sender, msg.content, isSelf);
 
   if (msg.sender === "System") {
-    alert(msg.content); // or show in red bubble
-  }
-});
+    alert(msg.content); 
+}});
 
 
           currentTaskId = taskId;
           currentUserId = userId;
 
-          // Fetch previous messages from history
+         
         fetch(`/api/chat/history/${taskId}?userId=${userId}`)
   .then(res => {
     if (!res.ok) {
